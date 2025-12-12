@@ -1,0 +1,37 @@
+/* Custom admin CSS for field widths and heights */
+
+/* Textarea fields - width va height */
+.aligned textarea[name*="description"] {
+    width: 70% !important;
+    height: 100px !important;
+    min-height: 100px !important;
+}
+
+.aligned textarea[name*="short_description"] {
+    width: 70% !important;
+    height: 80px !important;
+    min-height: 80px !important;
+}
+
+/* CharField fields - width */
+.aligned input[type="text"][name*="name"],
+.aligned input[type="text"][name*="brand"],
+.aligned input[type="text"][name*="country"],
+.aligned input[type="text"][name*="material"],
+.aligned input[type="text"][name*="position"],
+.aligned input[type="text"][name*="title"],
+.aligned input[type="text"][name*="keywords"] {
+    width: 70% !important;
+}
+
+/* Barcha textarea fieldlar uchun (umumiy) */
+.aligned textarea {
+    width: 70% !important;
+    min-height: 80px !important;
+}
+
+/* Barcha text input fieldlar uchun (umumiy) */
+.aligned input[type="text"] {
+    width: 70% !important;
+}
+
