@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django.utils.safestring import mark_safe
 from django import forms
 from parler.admin import TranslatableAdmin, TranslatableStackedInline, TranslatableTabularInline
 from .models import (
@@ -47,15 +48,26 @@ def get_translation_status(obj):
         except Exception as e:
             statuses.append(format_html('<span style="color: red;">{}: ✗</span>', lang_name))
     
-    return format_html(' | '.join([str(s) for s in statuses])) if statuses else format_html('<span style="color: #999;">-</span>')
+    if statuses:
+        return mark_safe(' | '.join([str(s) for s in statuses]))
+    return format_html('<span style="color: #999;">-</span>')
 
 
 @admin.register(Category)
 class CategoryAdmin(TranslatableAdmin):
-    list_display = ['name', 'get_translation_status', 'created_at']
+    list_display = ['get_name', 'get_translation_status', 'created_at']
     list_filter = ['created_at']
     search_fields = ['translations__name']
     date_hierarchy = 'created_at'
+    
+    def get_name(self, obj):
+        if obj and obj.pk:
+            try:
+                return obj.name or '-'
+            except Exception:
+                return str(obj) if obj else '-'
+        return '-'
+    get_name.short_description = 'Название'
     
     def get_translation_status(self, obj):
         return get_translation_status(obj)
@@ -68,11 +80,14 @@ class CategoryAdmin(TranslatableAdmin):
         js = ('admin/js/custom_admin.js',)
     
     def get_form(self, request, obj=None, **kwargs):
-        form = super().get_form(request, obj, **kwargs)
-        for field_name, field in form.base_fields.items():
-            if 'name' in field_name.lower() and hasattr(field.widget, 'attrs'):
-                field.widget.attrs.update({'style': 'width: 70%;'})
-        return form
+        kwargs = kwargs or {}
+        form_class = super().get_form(request, obj, **kwargs)
+        # Customize form fields if it's a form class
+        if hasattr(form_class, 'base_fields'):
+            for field_name, field in form_class.base_fields.items():
+                if 'name' in field_name.lower() and hasattr(field.widget, 'attrs'):
+                    field.widget.attrs.update({'style': 'width: 70%;'})
+        return form_class
     
     fieldsets = (
         ('Основная информация', {
