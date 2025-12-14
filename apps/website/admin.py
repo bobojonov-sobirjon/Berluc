@@ -284,19 +284,12 @@ class ServiceDetailInline(TranslatableTabularInline):
     inline_tabs = True
     fk_name = 'service_item'
     
-    def get_formset(self, request, obj=None, **kwargs):
-        formset = super().get_formset(request, obj, **kwargs)
-        original_form = formset.form
-        
-        class ServiceDetailForm(original_form):
-            def __init__(self, *args, **kwargs):
-                super().__init__(*args, **kwargs)
-                for field_name, field in self.fields.items():
-                    if 'name' in field_name.lower() and hasattr(field.widget, 'attrs'):
-                        field.widget.attrs.update({'style': 'width: 70%;'})
-        
-        formset.form = ServiceDetailForm
-        return formset
+    def get_form(self, request, obj=None, **kwargs):
+        form = super().get_form(request, obj, **kwargs)
+        for field_name, field in form.base_fields.items():
+            if 'name' in field_name.lower() and hasattr(field.widget, 'attrs'):
+                field.widget.attrs.update({'style': 'width: 70%;'})
+        return form
 
 
 @admin.register(Service)
