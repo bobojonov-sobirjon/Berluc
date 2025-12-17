@@ -133,7 +133,10 @@ STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = "/media/"
-MEDIA_ROOT = os.path.join(BASE_DIR, "/var/www/media/")
+# Development uchun - loyiha papkasi ichida media papkasi
+MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+# Production uchun - agar kerak bo'lsa, quyidagi qatorni ishlating:
+# MEDIA_ROOT = "/var/www/media"
 
 
 LANGUAGES = [

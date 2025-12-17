@@ -389,7 +389,6 @@ class Gallery(TranslatableModel):
         name = models.CharField(_("Название"), max_length=255, null=True, blank=True),
         description = models.TextField(_("Описание"), null=True, blank=True),
     )
-    image = models.ImageField(upload_to='gallery/', verbose_name='Изображение', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания', null=True, blank=True)
     
     def __str__(self):
@@ -413,6 +412,27 @@ class Gallery(TranslatableModel):
     class Meta:
         verbose_name = 'Галерея'
         verbose_name_plural = '09. Галереи'
+
+
+class GalleryImage(models.Model):
+    gallery = models.ForeignKey(Gallery, on_delete=models.CASCADE, related_name='images', verbose_name='Галерея', null=True, blank=True)
+    image = models.ImageField(upload_to='gallery/', verbose_name='Изображение', null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания', null=True, blank=True)
+    
+    objects = models.Manager()
+    
+    def __str__(self):
+        if self.gallery:
+            try:
+                gallery_name = str(self.gallery)
+            except Exception:
+                gallery_name = f'Gallery #{self.gallery.pk}'
+            return f'Image: {gallery_name}'
+        return f'Image #{self.pk}' if self.pk else 'New Image'
+    
+    class Meta:
+        verbose_name = 'Изображение галереи'
+        verbose_name_plural = 'Изображения галереи'
 
 
 class ContactForm(models.Model):

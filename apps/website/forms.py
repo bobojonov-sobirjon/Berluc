@@ -141,15 +141,19 @@ class ColorInputWidget(forms.Widget):
         return mark_safe(html)
     
     def value_from_datadict(self, data, files, name):
+        """Return JSON string, not list - Django JSONField expects string"""
         json_value = data.get(name, '[]')
         try:
             if isinstance(json_value, list):
-                return json_value
+                # Convert list to JSON string
+                return json.dumps(json_value, ensure_ascii=False)
             if isinstance(json_value, str):
-                return json.loads(json_value)
-            return []
+                # Validate it's valid JSON, then return as string
+                parsed = json.loads(json_value)
+                return json.dumps(parsed, ensure_ascii=False)
+            return '[]'
         except (json.JSONDecodeError, ValueError, TypeError):
-            return []
+            return '[]'
 
 
 class ProjectAdminForm(TranslatableModelForm):

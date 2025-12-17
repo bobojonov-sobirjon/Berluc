@@ -2,7 +2,7 @@ from rest_framework import serializers
 from .models import (
     Category, Project, ProjectItem, ProjectImage, ProjectVideo, ProjectSEO,
     ServiceCategory, Service, ServiceItem, ServiceDetail,
-    TeamMember, CEO, Gallery, ContactForm
+    TeamMember, CEO, Gallery, GalleryImage, ContactForm
 )
 
 
@@ -313,9 +313,25 @@ class CEOSerializer(serializers.ModelSerializer):
         fields = ['id', 'translations', 'type', 'created_at']
 
 
+class GalleryImageSerializer(serializers.ModelSerializer):
+    image = serializers.SerializerMethodField()
+    
+    def get_image(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
+    
+    class Meta:
+        model = GalleryImage
+        fields = ['id', 'image', 'created_at']
+
+
 class GallerySerializer(serializers.ModelSerializer):
     translations = serializers.SerializerMethodField()
-    image = serializers.SerializerMethodField()
+    images = serializers.SerializerMethodField()
     
     def get_translations(self, obj):
         result = {}
@@ -331,17 +347,13 @@ class GallerySerializer(serializers.ModelSerializer):
                 pass
         return result
     
-    def get_image(self, obj):
-        if obj.image:
-            request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.image.url)
-            return obj.image.url
-        return None
+    def get_images(self, obj):
+        images = obj.images.all()
+        return GalleryImageSerializer(images, many=True, context=self.context).data
     
     class Meta:
         model = Gallery
-        fields = ['id', 'translations', 'image', 'created_at']
+        fields = ['id', 'translations', 'images', 'created_at']
 
 
 class ContactFormSerializer(serializers.ModelSerializer):

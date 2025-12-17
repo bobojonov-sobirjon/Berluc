@@ -6,7 +6,7 @@ from parler.admin import TranslatableAdmin, TranslatableStackedInline, Translata
 from .models import (
     Category, Project, ProjectItem, ProjectImage, ProjectVideo, ProjectSEO,
     ServiceCategory, Service, ServiceItem, ServiceDetail,
-    TeamMember, CEO, Gallery, ContactForm
+    TeamMember, CEO, Gallery, GalleryImage, ContactForm
 )
 from .forms import ProjectAdminForm
 
@@ -233,10 +233,17 @@ class ProjectItemAdmin(TranslatableAdmin):
     
     def get_form(self, request, obj=None, **kwargs):
         from .forms import ColorInputWidget
+        kwargs = kwargs or {}
         form = super().get_form(request, obj, **kwargs)
-        for field_name, field in form.base_fields.items():
-            if 'color' in field_name.lower():
-                field.widget = ColorInputWidget()
+        if hasattr(form, 'base_fields'):
+            for field_name, field in form.base_fields.items():
+                if 'color' in field_name.lower():
+                    # Ensure field is JSONField and widget is properly set
+                    field.widget = ColorInputWidget()
+                    # Make sure field accepts JSON string
+                    if hasattr(field, 'to_python'):
+                        # Field is already JSONField, no need to change
+                        pass
         return form
     
     fieldsets = (
@@ -508,12 +515,27 @@ class CEOAdmin(TranslatableAdmin):
     readonly_fields = ['created_at']
 
 
+class GalleryImageInline(admin.TabularInline):
+    model = GalleryImage
+    extra = 1
+    fields = ('image', 'get_image_preview', 'created_at')
+    readonly_fields = ('get_image_preview', 'created_at')
+    fk_name = 'gallery'
+    
+    def get_image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="max-height: 50px; max-width: 50px;" />', obj.image.url)
+        return '-'
+    get_image_preview.short_description = 'Превью'
+
+
 @admin.register(Gallery)
 class GalleryAdmin(TranslatableAdmin):
-    list_display = ['name', 'get_translation_status', 'get_image_preview', 'created_at']
+    list_display = ['name', 'get_translation_status', 'created_at']
     list_filter = ['created_at']
     search_fields = ['translations__name', 'translations__description']
     date_hierarchy = 'created_at'
+    inlines = [GalleryImageInline]
     
     def get_translation_status(self, obj):
         return get_translation_status(obj)
@@ -524,12 +546,6 @@ class GalleryAdmin(TranslatableAdmin):
             'all': ('admin/css/custom_admin.css',)
         }
         js = ('admin/js/custom_admin.js',)
-    
-    def get_image_preview(self, obj):
-        if obj.image:
-            return format_html('<img src="{}" style="max-height: 50px; max-width: 50px;" />', obj.image.url)
-        return '-'
-    get_image_preview.short_description = 'Изображение'
     
     def get_form(self, request, obj=None, **kwargs):
         form = super().get_form(request, obj, **kwargs)
@@ -547,7 +563,7 @@ class GalleryAdmin(TranslatableAdmin):
     
     fieldsets = (
         ('Основная информация', {
-            'fields': ('name', 'image', 'description')
+            'fields': ('name', 'description')
         }),
         ('Дополнительно', {
             'fields': ('created_at',),
