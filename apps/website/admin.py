@@ -600,5 +600,5 @@ class ContactFormAdmin(ImportExportModelAdmin):
     )
     
     def has_module_permission(self, request):
-        # ContactForm ko'rinishi kerak faqat is_manager uchun (is_superuser uchun emas)
-        return hasattr(request.user, 'is_manager') and request.user.is_manager
+        # ContactForm ko'rinishi kerak is_superuser yoki is_manager uchun
+        return request.user.is_superuser or (hasattr(request.user, 'is_manager') and request.user.is_manager)
