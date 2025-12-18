@@ -5,6 +5,7 @@ from django.utils.safestring import mark_safe
 from django import forms
 from parler.admin import TranslatableAdmin, TranslatableStackedInline, TranslatableTabularInline
 from import_export.admin import ImportExportModelAdmin
+from import_export.formats import base_formats
 from .models import (
     Category, Project, ProjectImage, ProjectVideo, ProjectSEO,
     ServiceCategory, Service, ServiceItem, ServiceDetail,
@@ -565,6 +566,9 @@ class ContactFormAdmin(ImportExportModelAdmin):
     search_fields = ['name', 'phone', 'email', 'message']
     date_hierarchy = 'created_at'
     readonly_fields = ['created_at']
+    
+    # Faqat Excel formatini qoldirish
+    formats = [base_formats.XLSX]
     
     def get_message_preview(self, obj):
         if obj.message:
