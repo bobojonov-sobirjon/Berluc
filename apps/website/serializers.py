@@ -105,8 +105,7 @@ class ProjectSerializer(serializers.ModelSerializer):
                         'description': obj.description,
                         'short_description': obj.short_description,
                         'brand': obj.brand,
-                        'country': obj.country,
-                        'color': obj.color
+                        'country': obj.country
                     }
             except Exception:
                 pass
@@ -128,8 +127,6 @@ class ProjectSerializer(serializers.ModelSerializer):
         model = Project
         fields = [
             'id', 'translations', 'category', 'material',
-            'price', 'old_price', 'discount',
-            'width', 'height', 'depth', 'weight',
             'images', 'videos', 'seo', 'created_at'
         ]
 

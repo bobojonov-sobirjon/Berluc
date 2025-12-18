@@ -39,17 +39,9 @@ class Project(TranslatableModel):
         short_description = models.TextField(_("Краткое описание"), null=True, blank=True),
         brand = models.CharField(_("Бренд"), max_length=255, null=True, blank=True),
         country = models.CharField(_("Страна"), max_length=255, null=True, blank=True),
-        color = models.JSONField(_("Цвета"), null=True, blank=True, default=list, help_text='Список цветов в формате JSON, например: ["красный", "синий", "зеленый"]'),
     )
     category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name='Категория', null=True, blank=True)
     material = models.CharField(_("Материал"), max_length=255, null=True, blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Цена', null=True, blank=True)
-    old_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Старая цена', null=True, blank=True)
-    discount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Скидка', null=True, blank=True)
-    width = models.IntegerField(verbose_name='Ширина', null=True, blank=True)
-    height = models.IntegerField(verbose_name='Высота', null=True, blank=True)
-    depth = models.IntegerField(verbose_name='Глубина', null=True, blank=True)
-    weight = models.IntegerField(verbose_name='Вес', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания', null=True, blank=True)
     
     def __str__(self):

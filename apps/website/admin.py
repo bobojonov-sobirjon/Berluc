@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.models import Group
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django import forms
@@ -12,6 +13,9 @@ from .models import (
     TeamMember, CEO, Gallery, GalleryImage, ContactForm, User
 )
 from .forms import ProjectAdminForm
+
+# Group modelini unregister qilish
+admin.site.unregister(Group)
 
 
 def get_translation_status(obj):
@@ -32,12 +36,6 @@ def get_translation_status(obj):
                         main_field = obj.name
                     elif hasattr(obj, 'title'):
                         main_field = obj.title
-                    elif hasattr(obj, 'color'):
-                        main_field = obj.color
-                        if isinstance(main_field, list):
-                            main_field = ', '.join([str(c) for c in main_field if c]) if main_field else None
-                        elif main_field:
-                            main_field = str(main_field)
                     
                     if main_field and str(main_field).strip():
                         statuses.append(format_html('<span style="color: green; font-weight: bold;">{}: ✓</span>', lang_name))
@@ -142,7 +140,7 @@ class ProjectSEOInline(TranslatableStackedInline):
 @admin.register(Project)
 class ProjectAdmin(TranslatableAdmin):
     form = ProjectAdminForm
-    list_display = ['name', 'get_translation_status', 'price', 'created_at']
+    list_display = ['name', 'get_translation_status', 'created_at']
     list_filter = ['category', 'created_at']
     search_fields = ['translations__name', 'translations__brand', 'translations__country']
     date_hierarchy = 'created_at'
@@ -163,7 +161,6 @@ class ProjectAdmin(TranslatableAdmin):
     
     
     def get_form(self, request, obj=None, **kwargs):
-        from .forms import ColorInputWidget
         form = super().get_form(request, obj, **kwargs)
         for field_name, field in form.base_fields.items():
             if 'description' in field_name.lower():
@@ -173,8 +170,6 @@ class ProjectAdmin(TranslatableAdmin):
                         'cols': 80,
                         'style': 'width: 70%; height: {}px;'.format('100' if 'description' in field_name.lower() and 'short' not in field_name.lower() else '80')
                     })
-            elif 'color' in field_name.lower():
-                field.widget = ColorInputWidget()
             elif any(x in field_name.lower() for x in ['name', 'brand', 'country', 'material']):
                 if hasattr(field.widget, 'attrs'):
                     field.widget.attrs.update({
@@ -187,13 +182,7 @@ class ProjectAdmin(TranslatableAdmin):
             'fields': ('name', 'category', 'description', 'short_description')
         }),
         ('Дополнительная информация', {
-            'fields': ('brand', 'country', 'material', 'color')
-        }),
-        ('Цена и скидки', {
-            'fields': ('price', 'old_price', 'discount')
-        }),
-        ('Размеры', {
-            'fields': ('width', 'height', 'depth', 'weight')
+            'fields': ('brand', 'country', 'material')
         }),
         ('Дополнительно', {
             'fields': ('created_at',),
@@ -536,27 +525,28 @@ class GalleryAdmin(TranslatableAdmin):
     readonly_fields = ['created_at']
 
 
-@admin.register(User)
-class UserAdmin(BaseUserAdmin):
-    list_display = ['username', 'email', 'first_name', 'last_name', 'is_staff', 'is_superuser', 'is_manager']
-    list_filter = ['is_staff', 'is_superuser', 'is_manager', 'is_active']
-    fieldsets = BaseUserAdmin.fieldsets + (
-        ('Дополнительные права', {
-            'fields': ('is_manager',),
-        }),
-    )
-    add_fieldsets = BaseUserAdmin.add_fieldsets + (
-        ('Дополнительные права', {
-            'fields': ('is_manager',),
-        }),
-    )
-    
-    def save_model(self, request, obj, form, change):
-        # Agar is_manager=True bo'lsa, is_staff=True va is_active=True qilish (admin panelga kirish uchun)
-        if obj.is_manager:
-            obj.is_staff = True
-            obj.is_active = True
-        super().save_model(request, obj, form, change)
+# User modelini unregister qilish (admin panelda ko'rinmasligi uchun)
+# @admin.register(User)
+# class UserAdmin(BaseUserAdmin):
+#     list_display = ['username', 'email', 'first_name', 'last_name', 'is_staff', 'is_superuser', 'is_manager']
+#     list_filter = ['is_staff', 'is_superuser', 'is_manager', 'is_active']
+#     fieldsets = BaseUserAdmin.fieldsets + (
+#         ('Дополнительные права', {
+#             'fields': ('is_manager',),
+#         }),
+#     )
+#     add_fieldsets = BaseUserAdmin.add_fieldsets + (
+#         ('Дополнительные права', {
+#             'fields': ('is_manager',),
+#         }),
+#     )
+#     
+#     def save_model(self, request, obj, form, change):
+#         # Agar is_manager=True bo'lsa, is_staff=True va is_active=True qilish (admin panelga kirish uchun)
+#         if obj.is_manager:
+#             obj.is_staff = True
+#             obj.is_active = True
+#         super().save_model(request, obj, form, change)
 
 
 @admin.register(ContactForm)
