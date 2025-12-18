@@ -11,57 +11,6 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='projectitem',
-            name='project',
-        ),
-        migrations.RemoveField(
-            model_name='projectimage',
-            name='project_item',
-        ),
-        migrations.RemoveField(
-            model_name='projectseo',
-            name='project_item',
-        ),
-        migrations.RemoveField(
-            model_name='projectvideo',
-            name='project_item',
-        ),
-        migrations.AddField(
-            model_name='project',
-            name='depth',
-            field=models.IntegerField(blank=True, null=True, verbose_name='Глубина'),
-        ),
-        migrations.AddField(
-            model_name='project',
-            name='discount',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name='Скидка'),
-        ),
-        migrations.AddField(
-            model_name='project',
-            name='height',
-            field=models.IntegerField(blank=True, null=True, verbose_name='Высота'),
-        ),
-        migrations.AddField(
-            model_name='project',
-            name='old_price',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name='Старая цена'),
-        ),
-        migrations.AddField(
-            model_name='project',
-            name='price',
-            field=models.DecimalField(blank=True, decimal_places=2, max_digits=10, null=True, verbose_name='Цена'),
-        ),
-        migrations.AddField(
-            model_name='project',
-            name='weight',
-            field=models.IntegerField(blank=True, null=True, verbose_name='Вес'),
-        ),
-        migrations.AddField(
-            model_name='project',
-            name='width',
-            field=models.IntegerField(blank=True, null=True, verbose_name='Ширина'),
-        ),
         migrations.AddField(
             model_name='projectimage',
             name='project',
@@ -73,19 +22,15 @@ class Migration(migrations.Migration):
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='seo', to='website.project', verbose_name='Проект'),
         ),
         migrations.AddField(
-            model_name='projecttranslation',
-            name='color',
-            field=models.JSONField(blank=True, default=list, help_text='Список цветов в формате JSON, например: ["красный", "синий", "зеленый"]', null=True, verbose_name='Цвета'),
-        ),
-        migrations.AddField(
             model_name='projectvideo',
             name='project',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='videos', to='website.project', verbose_name='Проект'),
         ),
-        migrations.DeleteModel(
-            name='ProjectItemTranslation',
-        ),
-        migrations.DeleteModel(
-            name='ProjectItem',
-        ),
+        # ProjectItem va ProjectItemTranslation allaqachon o'chirilgan, shuning uchun DeleteModel operatsiyalari o'chirildi
+        # migrations.DeleteModel(
+        #     name='ProjectItemTranslation',
+        # ),
+        # migrations.DeleteModel(
+        #     name='ProjectItem',
+        # ),
     ]
