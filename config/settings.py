@@ -74,6 +74,9 @@ WSGI_APPLICATION = 'config.wsgi.application'
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Custom User Model
+AUTH_USER_MODEL = 'website.User'
+
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
 
@@ -134,7 +137,7 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 
 MEDIA_URL = "/media/"
 # Development uchun - loyiha papkasi ichida media papkasi
-MEDIA_ROOT = os.path.join(BASE_DIR, "media")
+MEDIA_ROOT = os.path.join(BASE_DIR, "/var/www/media/")
 # Production uchun - agar kerak bo'lsa, quyidagi qatorni ishlating:
 # MEDIA_ROOT = "/var/www/media"
 

@@ -1,12 +1,13 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django import forms
 from parler.admin import TranslatableAdmin, TranslatableStackedInline, TranslatableTabularInline
 from .models import (
-    Category, Project, ProjectItem, ProjectImage, ProjectVideo, ProjectSEO,
+    Category, Project, ProjectImage, ProjectVideo, ProjectSEO,
     ServiceCategory, Service, ServiceItem, ServiceDetail,
-    TeamMember, CEO, Gallery, GalleryImage, ContactForm
+    TeamMember, CEO, Gallery, GalleryImage, ContactForm, User
 )
 from .forms import ProjectAdminForm
 
@@ -73,6 +74,9 @@ class CategoryAdmin(TranslatableAdmin):
         return get_translation_status(obj)
     get_translation_status.short_description = 'Переводы'
     
+    def has_module_permission(self, request):
+        return request.user.is_superuser or (hasattr(request.user, 'is_manager') and request.user.is_manager)
+    
     class Media:
         css = {
             'all': ('admin/css/custom_admin.css',)
@@ -107,7 +111,7 @@ class ProjectImageInline(admin.TabularInline):
     extra = 1
     fields = ('image', 'get_image_preview', 'created_at')
     readonly_fields = ('get_image_preview', 'created_at')
-    fk_name = 'project_item'
+    fk_name = 'project'
     
     def get_image_preview(self, obj):
         if obj.image:
@@ -121,7 +125,7 @@ class ProjectVideoInline(admin.TabularInline):
     extra = 1
     fields = ('video', 'created_at')
     readonly_fields = ('created_at',)
-    fk_name = 'project_item'
+    fk_name = 'project'
 
 
 class ProjectSEOInline(TranslatableStackedInline):
@@ -130,16 +134,17 @@ class ProjectSEOInline(TranslatableStackedInline):
     fields = ('title', 'description', 'keywords', 'created_at')
     readonly_fields = ('created_at',)
     inline_tabs = True
-    fk_name = 'project_item'
+    fk_name = 'project'
 
 
 @admin.register(Project)
 class ProjectAdmin(TranslatableAdmin):
     form = ProjectAdminForm
-    list_display = ['name', 'get_translation_status']
+    list_display = ['name', 'get_translation_status', 'price', 'created_at']
     list_filter = ['category', 'created_at']
     search_fields = ['translations__name', 'translations__brand', 'translations__country']
     date_hierarchy = 'created_at'
+    inlines = [ProjectImageInline, ProjectVideoInline, ProjectSEOInline]
     
     def get_translation_status(self, obj):
         return get_translation_status(obj)
@@ -153,6 +158,7 @@ class ProjectAdmin(TranslatableAdmin):
     
     
     def get_form(self, request, obj=None, **kwargs):
+        from .forms import ColorInputWidget
         form = super().get_form(request, obj, **kwargs)
         for field_name, field in form.base_fields.items():
             if 'description' in field_name.lower():
@@ -162,6 +168,8 @@ class ProjectAdmin(TranslatableAdmin):
                         'cols': 80,
                         'style': 'width: 70%; height: {}px;'.format('100' if 'description' in field_name.lower() and 'short' not in field_name.lower() else '80')
                     })
+            elif 'color' in field_name.lower():
+                field.widget = ColorInputWidget()
             elif any(x in field_name.lower() for x in ['name', 'brand', 'country', 'material']):
                 if hasattr(field.widget, 'attrs'):
                     field.widget.attrs.update({
@@ -174,87 +182,17 @@ class ProjectAdmin(TranslatableAdmin):
             'fields': ('name', 'category', 'description', 'short_description')
         }),
         ('Дополнительная информация', {
-            'fields': ('brand', 'country', 'material')
-        }),
-        ('Дополнительно', {
-            'fields': ('created_at',),
-            'classes': ('collapse',)
-        }),
-    )
-    
-    readonly_fields = ['created_at']
-
-
-@admin.register(ProjectItem)
-class ProjectItemAdmin(TranslatableAdmin):
-    list_display = ['get_item_name', 'get_translation_status', 'project', 'price', 'created_at']
-    list_filter = ['project', 'created_at']
-    search_fields = ['project__translations__name', 'translations__color']
-    date_hierarchy = 'created_at'
-    inlines = [ProjectImageInline, ProjectVideoInline, ProjectSEOInline]
-    
-    def get_item_name(self, obj):
-        if obj.project:
-            try:
-                project_name = str(obj.project)
-            except Exception:
-                project_name = f'Project #{obj.project.pk}'
-            colors = []
-            current_lang = obj.get_current_language()
-            for lang_code in ['ru', 'uz']:
-                try:
-                    if obj.has_translation(lang_code):
-                        obj.set_current_language(lang_code)
-                        color = obj.color
-                        if color:
-                            if isinstance(color, list):
-                                colors.extend([str(c) for c in color])
-                            else:
-                                colors.append(str(color))
-                except Exception:
-                    pass
-            if current_lang:
-                obj.set_current_language(current_lang)
-            if colors:
-                return f'{project_name} - {", ".join(set(colors))}'
-            return project_name
-        return f'Item #{obj.pk}' if obj.pk else 'New Item'
-    get_item_name.short_description = 'Элемент проекта'
-    
-    def get_translation_status(self, obj):
-        return get_translation_status(obj)
-    get_translation_status.short_description = 'Переводы'
-    
-    class Media:
-        css = {
-            'all': ('admin/css/custom_admin.css',)
-        }
-        js = ('admin/js/custom_admin.js',)
-    
-    def get_form(self, request, obj=None, **kwargs):
-        from .forms import ColorInputWidget
-        kwargs = kwargs or {}
-        form = super().get_form(request, obj, **kwargs)
-        if hasattr(form, 'base_fields'):
-            for field_name, field in form.base_fields.items():
-                if 'color' in field_name.lower():
-                    # Ensure field is JSONField and widget is properly set
-                    field.widget = ColorInputWidget()
-                    # Make sure field accepts JSON string
-                    if hasattr(field, 'to_python'):
-                        # Field is already JSONField, no need to change
-                        pass
-        return form
-    
-    fieldsets = (
-        ('Основная информация', {
-            'fields': ('project', 'color', 'created_at')
+            'fields': ('brand', 'country', 'material', 'color')
         }),
         ('Цена и скидки', {
             'fields': ('price', 'old_price', 'discount')
         }),
         ('Размеры', {
             'fields': ('width', 'height', 'depth', 'weight')
+        }),
+        ('Дополнительно', {
+            'fields': ('created_at',),
+            'classes': ('collapse',)
         }),
     )
     
@@ -271,6 +209,9 @@ class ServiceCategoryAdmin(TranslatableAdmin):
     def get_translation_status(self, obj):
         return get_translation_status(obj)
     get_translation_status.short_description = 'Переводы'
+    
+    def has_module_permission(self, request):
+        return request.user.is_superuser or (hasattr(request.user, 'is_manager') and request.user.is_manager)
     
     class Media:
         css = {
@@ -325,6 +266,9 @@ class ServiceAdmin(TranslatableAdmin):
         return get_translation_status(obj)
     get_translation_status.short_description = 'Переводы'
     
+    def has_module_permission(self, request):
+        return request.user.is_superuser or (hasattr(request.user, 'is_manager') and request.user.is_manager)
+    
     class Media:
         css = {
             'all': ('admin/css/custom_admin.css',)
@@ -369,6 +313,10 @@ class ServiceItemAdmin(TranslatableAdmin):
     def get_translation_status(self, obj):
         return get_translation_status(obj)
     get_translation_status.short_description = 'Переводы'
+    
+    def has_module_permission(self, request):
+        # ServiceItem faqat superuser uchun
+        return request.user.is_superuser
     
     class Media:
         css = {
@@ -432,6 +380,9 @@ class TeamMemberAdmin(TranslatableAdmin):
         return get_translation_status(obj)
     get_translation_status.short_description = 'Переводы'
     
+    def has_module_permission(self, request):
+        return request.user.is_superuser or (hasattr(request.user, 'is_manager') and request.user.is_manager)
+    
     class Media:
         css = {
             'all': ('admin/css/custom_admin.css',)
@@ -481,6 +432,9 @@ class CEOAdmin(TranslatableAdmin):
     def get_translation_status(self, obj):
         return get_translation_status(obj)
     get_translation_status.short_description = 'Переводы'
+    
+    def has_module_permission(self, request):
+        return request.user.is_superuser or (hasattr(request.user, 'is_manager') and request.user.is_manager)
     
     class Media:
         css = {
@@ -541,6 +495,9 @@ class GalleryAdmin(TranslatableAdmin):
         return get_translation_status(obj)
     get_translation_status.short_description = 'Переводы'
     
+    def has_module_permission(self, request):
+        return request.user.is_superuser or (hasattr(request.user, 'is_manager') and request.user.is_manager)
+    
     class Media:
         css = {
             'all': ('admin/css/custom_admin.css',)
@@ -572,6 +529,22 @@ class GalleryAdmin(TranslatableAdmin):
     )
     
     readonly_fields = ['created_at']
+
+
+@admin.register(User)
+class UserAdmin(BaseUserAdmin):
+    list_display = ['username', 'email', 'first_name', 'last_name', 'is_staff', 'is_superuser', 'is_manager']
+    list_filter = ['is_staff', 'is_superuser', 'is_manager', 'is_active']
+    fieldsets = BaseUserAdmin.fieldsets + (
+        ('Дополнительные права', {
+            'fields': ('is_manager',),
+        }),
+    )
+    add_fieldsets = BaseUserAdmin.add_fieldsets + (
+        ('Дополнительные права', {
+            'fields': ('is_manager',),
+        }),
+    )
 
 
 @admin.register(ContactForm)
@@ -614,3 +587,7 @@ class ContactFormAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
+    
+    def has_module_permission(self, request):
+        # ContactForm ko'rinishi kerak faqat is_superuser yoki is_manager uchun
+        return request.user.is_superuser or (hasattr(request.user, 'is_manager') and request.user.is_manager)

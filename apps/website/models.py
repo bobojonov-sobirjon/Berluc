@@ -1,5 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.contrib.auth.models import AbstractUser
 from parler.models import TranslatableModel, TranslatedFields
 
 class Category(TranslatableModel):
@@ -38,9 +39,17 @@ class Project(TranslatableModel):
         short_description = models.TextField(_("Краткое описание"), null=True, blank=True),
         brand = models.CharField(_("Бренд"), max_length=255, null=True, blank=True),
         country = models.CharField(_("Страна"), max_length=255, null=True, blank=True),
+        color = models.JSONField(_("Цвета"), null=True, blank=True, default=list, help_text='Список цветов в формате JSON, например: ["красный", "синий", "зеленый"]'),
     )
     category = models.ForeignKey(Category, on_delete=models.CASCADE, verbose_name='Категория', null=True, blank=True)
     material = models.CharField(_("Материал"), max_length=255, null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Цена', null=True, blank=True)
+    old_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Старая цена', null=True, blank=True)
+    discount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Скидка', null=True, blank=True)
+    width = models.IntegerField(verbose_name='Ширина', null=True, blank=True)
+    height = models.IntegerField(verbose_name='Высота', null=True, blank=True)
+    depth = models.IntegerField(verbose_name='Глубина', null=True, blank=True)
+    weight = models.IntegerField(verbose_name='Вес', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания', null=True, blank=True)
     
     def __str__(self):
@@ -66,19 +75,12 @@ class Project(TranslatableModel):
         verbose_name_plural = '02. Проекты'
         
 
-class ProjectItem(TranslatableModel):
-    translations = TranslatedFields(
-        color = models.JSONField(_("Цвета"), null=True, blank=True, default=list, help_text='Список цветов в формате JSON, например: ["красный", "синий", "зеленый"]'),
-    )
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='project_items', verbose_name='Проект', null=True, blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Цена', null=True, blank=True)
-    old_price = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Старая цена', null=True, blank=True)
-    discount = models.DecimalField(max_digits=10, decimal_places=2, verbose_name='Скидка', null=True, blank=True)
-    width = models.IntegerField(verbose_name='Ширина', null=True, blank=True)
-    height = models.IntegerField(verbose_name='Высота', null=True, blank=True)
-    depth = models.IntegerField(verbose_name='Глубина', null=True, blank=True)
-    weight = models.IntegerField(verbose_name='Вес', null=True, blank=True)
+class ProjectImage(models.Model):
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='images', verbose_name='Проект', null=True, blank=True)
+    image = models.ImageField(upload_to='projects/', verbose_name='Изображение', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания', null=True, blank=True)
+    
+    objects = models.Manager()
     
     def __str__(self):
         if self.project:
@@ -86,45 +88,6 @@ class ProjectItem(TranslatableModel):
                 project_name = str(self.project)
             except Exception:
                 project_name = f'Project #{self.project.pk}'
-            colors = []
-            current_lang = self.get_current_language()
-            for lang_code in ['ru', 'uz']:
-                try:
-                    if self.has_translation(lang_code):
-                        self.set_current_language(lang_code)
-                        color = self.color
-                        if color:
-                            if isinstance(color, list):
-                                colors.extend([str(c) for c in color])
-                            else:
-                                colors.append(str(color))
-                except Exception:
-                    pass
-            if current_lang:
-                self.set_current_language(current_lang)
-            if colors:
-                return f'Item: {project_name} - {", ".join(set(colors))}'
-            return f'Item: {project_name}'
-        return f'ProjectItem #{self.pk}' if self.pk else 'New ProjectItem'
-    
-    class Meta:
-        verbose_name = 'Элемент проекта'
-        verbose_name_plural = '03. Элементы проекта'
-
-
-class ProjectImage(models.Model):
-    project_item = models.ForeignKey(ProjectItem, on_delete=models.CASCADE, related_name='images', verbose_name='Элемент проекта', null=True, blank=True)
-    image = models.ImageField(upload_to='projects/', verbose_name='Изображение', null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания', null=True, blank=True)
-    
-    objects = models.Manager()
-    
-    def __str__(self):
-        if self.project_item:
-            try:
-                project_name = str(self.project_item.project) if self.project_item.project else f'Item #{self.project_item.pk}'
-            except Exception:
-                project_name = f'Item #{self.project_item.pk}'
             return f'Image: {project_name}'
         return f'Image #{self.pk}' if self.pk else 'New Image'
     
@@ -134,18 +97,18 @@ class ProjectImage(models.Model):
 
 
 class ProjectVideo(models.Model):
-    project_item = models.ForeignKey(ProjectItem, on_delete=models.CASCADE, related_name='videos', verbose_name='Элемент проекта', null=True, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='videos', verbose_name='Проект', null=True, blank=True)
     video = models.FileField(upload_to='projects/', verbose_name='Видео', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания', null=True, blank=True)
     
     objects = models.Manager()
     
     def __str__(self):
-        if self.project_item:
+        if self.project:
             try:
-                project_name = str(self.project_item.project) if self.project_item.project else f'Item #{self.project_item.pk}'
+                project_name = str(self.project)
             except Exception:
-                project_name = f'Item #{self.project_item.pk}'
+                project_name = f'Project #{self.project.pk}'
             return f'Video: {project_name}'
         return f'Video #{self.pk}' if self.pk else 'New Video'
     
@@ -160,15 +123,15 @@ class ProjectSEO(TranslatableModel):
         description = models.TextField(_("Описание"), null=True, blank=True),
         keywords = models.TextField(_("Ключевые слова"), null=True, blank=True),
     )
-    project_item = models.ForeignKey(ProjectItem, on_delete=models.CASCADE, related_name='seo', verbose_name='Элемент проекта', null=True, blank=True)
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='seo', verbose_name='Проект', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания', null=True, blank=True)
     
     def __str__(self):
-        if self.project_item:
+        if self.project:
             try:
-                project_name = str(self.project_item.project) if self.project_item.project else f'Item #{self.project_item.pk}'
+                project_name = str(self.project)
             except Exception:
-                project_name = f'Item #{self.project_item.pk}'
+                project_name = f'Project #{self.project.pk}'
             titles = []
             current_lang = self.get_current_language()
             for lang_code in ['ru', 'uz']:
@@ -448,4 +411,12 @@ class ContactForm(models.Model):
     class Meta:
         verbose_name = 'Форма обратной связи'
         verbose_name_plural = '10. Формы обратной связи'
+
+
+class User(AbstractUser):
+    is_manager = models.BooleanField(_("Менеджер"), default=False, help_text='Designates whether this user is a manager.')
+    
+    class Meta:
+        verbose_name = 'Пользователь'
+        verbose_name_plural = 'Пользователи'
         

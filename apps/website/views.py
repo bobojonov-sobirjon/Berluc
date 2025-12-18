@@ -53,14 +53,14 @@ class ProjectFilter(FilterSet):
         
         # To'g'ridan-to'g'ri SQL query ishlatish, recursion dan qochish uchun
         with connection.cursor() as cursor:
-            # ProjectItemTranslation jadvalidan color fieldni olish
+            # ProjectTranslation jadvalidan color fieldni olish
             cursor.execute("""
                 SELECT DISTINCT master_id, color 
-                FROM website_projectitem_translation 
+                FROM website_project_translation 
                 WHERE color IS NOT NULL
             """)
             
-            project_item_ids = set()
+            project_ids = set()
             for row in cursor.fetchall():
                 master_id = row[0]
                 color_json = row[1]
@@ -74,28 +74,16 @@ class ProjectFilter(FilterSet):
                             if isinstance(color, list):
                                 # List ichida qidirish
                                 if any(str(c).lower().find(value.lower()) != -1 for c in color if c):
-                                    project_item_ids.add(master_id)
+                                    project_ids.add(master_id)
                             elif isinstance(color, str):
                                 # String ichida qidirish
                                 if value.lower() in color.lower():
-                                    project_item_ids.add(master_id)
+                                    project_ids.add(master_id)
                     except Exception:
                         pass
         
-        # ProjectItem ID lardan Project ID larni olish
-        if project_item_ids:
-            with connection.cursor() as cursor:
-                placeholders = ','.join(['%s'] * len(project_item_ids))
-                cursor.execute(f"""
-                    SELECT DISTINCT project_id 
-                    FROM website_projectitem 
-                    WHERE id IN ({placeholders})
-                """, list(project_item_ids))
-                
-                project_ids = [row[0] for row in cursor.fetchall() if row[0]]
-                
-                if project_ids:
-                    return queryset.filter(id__in=project_ids).distinct()
+        if project_ids:
+            return queryset.filter(id__in=project_ids).distinct()
         
         # Agar hech qanday translation topilmasa, bo'sh queryset qaytarish
         return queryset.none()
@@ -124,13 +112,13 @@ class ProjectFilter(FilterSet):
 class ProjectViewSet(viewsets.ReadOnlyModelViewSet):
     """
     ViewSet for Project model.
-    Returns projects with translations (ru/uz), project items (with colors, prices, dimensions), images, videos, and SEO data.
+    Returns projects with translations (ru/uz), colors, prices, dimensions, images, videos, and SEO data.
     Supports pagination, filtering by name, category, brand, material, color, and limit.
     """
     queryset = Project.objects.prefetch_related(
-        'project_items__images',
-        'project_items__videos',
-        'project_items__seo'
+        'images',
+        'videos',
+        'seo'
     ).select_related('category')
     serializer_class = ProjectSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]

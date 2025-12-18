@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from .models import (
-    Category, Project, ProjectItem, ProjectImage, ProjectVideo, ProjectSEO,
+    Category, Project, ProjectImage, ProjectVideo, ProjectSEO,
     ServiceCategory, Service, ServiceItem, ServiceDetail,
     TeamMember, CEO, Gallery, GalleryImage, ContactForm
 )
@@ -87,8 +87,9 @@ class ProjectSEOSerializer(serializers.ModelSerializer):
         fields = ['id', 'translations', 'created_at']
 
 
-class ProjectItemSerializer(serializers.ModelSerializer):
+class ProjectSerializer(serializers.ModelSerializer):
     translations = serializers.SerializerMethodField()
+    category = CategorySerializer(read_only=True)
     images = serializers.SerializerMethodField()
     videos = serializers.SerializerMethodField()
     seo = serializers.SerializerMethodField()
@@ -100,6 +101,11 @@ class ProjectItemSerializer(serializers.ModelSerializer):
                 if obj.has_translation(lang_code):
                     obj.set_current_language(lang_code)
                     result[lang_code] = {
+                        'name': obj.name,
+                        'description': obj.description,
+                        'short_description': obj.short_description,
+                        'brand': obj.brand,
+                        'country': obj.country,
                         'color': obj.color
                     }
             except Exception:
@@ -119,45 +125,12 @@ class ProjectItemSerializer(serializers.ModelSerializer):
         return ProjectSEOSerializer(seo, many=True, context=self.context).data
     
     class Meta:
-        model = ProjectItem
-        fields = [
-            'id', 'translations', 'price', 'old_price', 'discount',
-            'width', 'height', 'depth', 'weight',
-            'images', 'videos', 'seo', 'created_at'
-        ]
-
-
-class ProjectSerializer(serializers.ModelSerializer):
-    translations = serializers.SerializerMethodField()
-    category = CategorySerializer(read_only=True)
-    project_items = serializers.SerializerMethodField()
-    
-    def get_translations(self, obj):
-        result = {}
-        for lang_code in ['ru', 'uz']:
-            try:
-                if obj.has_translation(lang_code):
-                    obj.set_current_language(lang_code)
-                    result[lang_code] = {
-                        'name': obj.name,
-                        'description': obj.description,
-                        'short_description': obj.short_description,
-                        'brand': obj.brand,
-                        'country': obj.country
-                    }
-            except Exception:
-                pass
-        return result
-    
-    def get_project_items(self, obj):
-        items = obj.project_items.all()
-        return ProjectItemSerializer(items, many=True, context=self.context).data
-    
-    class Meta:
         model = Project
         fields = [
             'id', 'translations', 'category', 'material',
-            'project_items', 'created_at'
+            'price', 'old_price', 'discount',
+            'width', 'height', 'depth', 'weight',
+            'images', 'videos', 'seo', 'created_at'
         ]
 
 
