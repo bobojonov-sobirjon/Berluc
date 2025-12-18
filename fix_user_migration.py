@@ -19,16 +19,15 @@ except Exception as e:
     print(f"Error setting up Django: {e}")
     sys.exit(1)
 
-from django.db import connection
+from django.db import connection as db_connection
 from django.utils import timezone
-from django.core.management import call_command
 
 def fix_user_migration():
     """Fix migration by creating User table directly"""
     try:
-        with connection.cursor() as cursor:
+        with db_connection.cursor() as cursor:
             # Check if User table exists
-            if connection.vendor == 'sqlite':
+            if db_connection.vendor == 'sqlite':
                 cursor.execute("""
                     SELECT name FROM sqlite_master 
                     WHERE type='table' AND name='website_user'
@@ -45,9 +44,8 @@ def fix_user_migration():
                 print("Creating User table...")
                 # Use Django's schema editor to create the table
                 from apps.website.models import User
-                from django.db import connection
                 
-                schema_editor = connection.schema_editor()
+                schema_editor = db_connection.schema_editor()
                 schema_editor.create_model(User)
                 print("User table created successfully")
             else:
@@ -63,7 +61,7 @@ def fix_user_migration():
             else:
                 # Mark migration as applied
                 now = timezone.now()
-                if connection.vendor == 'sqlite':
+                if db_connection.vendor == 'sqlite':
                     cursor.execute("""
                         INSERT INTO django_migrations (app, name, applied)
                         VALUES ('website', '0009_create_user_model', ?)
