@@ -4,6 +4,7 @@ from django.utils.html import format_html
 from django.utils.safestring import mark_safe
 from django import forms
 from parler.admin import TranslatableAdmin, TranslatableStackedInline, TranslatableTabularInline
+from import_export.admin import ImportExportModelAdmin
 from .models import (
     Category, Project, ProjectImage, ProjectVideo, ProjectSEO,
     ServiceCategory, Service, ServiceItem, ServiceDetail,
@@ -558,7 +559,7 @@ class UserAdmin(BaseUserAdmin):
 
 
 @admin.register(ContactForm)
-class ContactFormAdmin(admin.ModelAdmin):
+class ContactFormAdmin(ImportExportModelAdmin):
     list_display = ['name', 'phone', 'email', 'get_message_preview', 'created_at']
     list_filter = ['created_at']
     search_fields = ['name', 'phone', 'email', 'message']
