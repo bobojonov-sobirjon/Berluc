@@ -144,13 +144,13 @@ def fix_user_migration():
                 if db_connection.vendor == 'sqlite':
                     cursor.execute("""
                         INSERT INTO django_migrations (app, name, applied)
-                        VALUES ('website', '0009_create_user_model', ?)
-                    """, [now])
+                        VALUES (?, ?, ?)
+                    """, ['website', '0009_create_user_model', now])
                 else:  # PostgreSQL
                     cursor.execute("""
                         INSERT INTO django_migrations (app, name, applied)
-                        VALUES ('website', '0009_create_user_model', %s)
-                    """, [now])
+                        VALUES (%s, %s, %s)
+                    """, ['website', '0009_create_user_model', now])
                 print("Migration 0009_create_user_model marked as applied")
             
             print("\nNow you can run: python3 manage.py migrate")
