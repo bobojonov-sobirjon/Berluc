@@ -545,6 +545,18 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('is_manager',),
         }),
     )
+    
+    def save_model(self, request, obj, form, change):
+        # Agar is_manager=True bo'lsa, is_staff=True qilish (admin panelga kirish uchun)
+        if obj.is_manager:
+            obj.is_staff = True
+        super().save_model(request, obj, form, change)
+    
+    def save_model(self, request, obj, form, change):
+        # Agar is_manager=True bo'lsa, is_staff=True qilish
+        if obj.is_manager:
+            obj.is_staff = True
+        super().save_model(request, obj, form, change)
 
 
 @admin.register(ContactForm)
