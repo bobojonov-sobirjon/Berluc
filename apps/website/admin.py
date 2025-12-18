@@ -150,6 +150,9 @@ class ProjectAdmin(TranslatableAdmin):
         return get_translation_status(obj)
     get_translation_status.short_description = 'Переводы'
     
+    def has_module_permission(self, request):
+        return request.user.is_superuser or (hasattr(request.user, 'is_manager') and request.user.is_manager)
+    
     class Media:
         css = {
             'all': ('admin/css/custom_admin.css',)
@@ -547,15 +550,10 @@ class UserAdmin(BaseUserAdmin):
     )
     
     def save_model(self, request, obj, form, change):
-        # Agar is_manager=True bo'lsa, is_staff=True qilish (admin panelga kirish uchun)
+        # Agar is_manager=True bo'lsa, is_staff=True va is_active=True qilish (admin panelga kirish uchun)
         if obj.is_manager:
             obj.is_staff = True
-        super().save_model(request, obj, form, change)
-    
-    def save_model(self, request, obj, form, change):
-        # Agar is_manager=True bo'lsa, is_staff=True qilish
-        if obj.is_manager:
-            obj.is_staff = True
+            obj.is_active = True
         super().save_model(request, obj, form, change)
 
 
@@ -601,5 +599,5 @@ class ContactFormAdmin(admin.ModelAdmin):
     )
     
     def has_module_permission(self, request):
-        # ContactForm ko'rinishi kerak faqat is_superuser yoki is_manager uchun
-        return request.user.is_superuser or (hasattr(request.user, 'is_manager') and request.user.is_manager)
+        # ContactForm ko'rinishi kerak faqat is_manager uchun (is_superuser uchun emas)
+        return hasattr(request.user, 'is_manager') and request.user.is_manager
