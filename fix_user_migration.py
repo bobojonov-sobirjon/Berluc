@@ -83,53 +83,165 @@ def fix_user_migration():
                     cursor.execute("CREATE INDEX IF NOT EXISTS website_user_username ON website_user(username)")
                     cursor.execute("CREATE INDEX IF NOT EXISTS website_user_email ON website_user(email)")
                 
-                # Create many-to-many tables
-                if db_connection.vendor == 'sqlite':
-                    cursor.execute("""
-                        CREATE TABLE IF NOT EXISTS website_user_groups (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            user_id INTEGER NOT NULL,
-                            group_id INTEGER NOT NULL,
-                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
-                            FOREIGN KEY (group_id) REFERENCES auth_group(id) ON DELETE CASCADE,
-                            UNIQUE(user_id, group_id)
-                        )
-                    """)
-                    cursor.execute("""
-                        CREATE TABLE IF NOT EXISTS website_user_user_permissions (
-                            id INTEGER PRIMARY KEY AUTOINCREMENT,
-                            user_id INTEGER NOT NULL,
-                            permission_id INTEGER NOT NULL,
-                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
-                            FOREIGN KEY (permission_id) REFERENCES auth_permission(id) ON DELETE CASCADE,
-                            UNIQUE(user_id, permission_id)
-                        )
-                    """)
-                else:  # PostgreSQL
-                    cursor.execute("""
-                        CREATE TABLE IF NOT EXISTS website_user_groups (
-                            id SERIAL PRIMARY KEY,
-                            user_id INTEGER NOT NULL,
-                            group_id INTEGER NOT NULL,
-                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
-                            FOREIGN KEY (group_id) REFERENCES auth_group(id) ON DELETE CASCADE,
-                            UNIQUE(user_id, group_id)
-                        )
-                    """)
-                    cursor.execute("""
-                        CREATE TABLE IF NOT EXISTS website_user_user_permissions (
-                            id SERIAL PRIMARY KEY,
-                            user_id INTEGER NOT NULL,
-                            permission_id INTEGER NOT NULL,
-                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
-                            FOREIGN KEY (permission_id) REFERENCES auth_permission(id) ON DELETE CASCADE,
-                            UNIQUE(user_id, permission_id)
-                        )
-                    """)
-                
                 print("User table created successfully")
             else:
                 print("User table already exists")
+            
+            # Create many-to-many tables (always check, even if User table exists)
+            if db_connection.vendor == 'sqlite':
+                cursor.execute("""
+                    SELECT name FROM sqlite_master 
+                    WHERE type='table' AND name='website_user_groups'
+                """)
+                if not cursor.fetchone():
+                    print("Creating website_user_groups table...")
+                    cursor.execute("""
+                        CREATE TABLE website_user_groups (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER NOT NULL,
+                            group_id INTEGER NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
+                            FOREIGN KEY (group_id) REFERENCES auth_group(id) ON DELETE CASCADE,
+                            UNIQUE(user_id, group_id)
+                        )
+                    """)
+                    print("website_user_groups table created")
+                else:
+                    print("website_user_groups table already exists")
+                
+                cursor.execute("""
+                    SELECT name FROM sqlite_master 
+                    WHERE type='table' AND name='website_user_user_permissions'
+                """)
+                if not cursor.fetchone():
+                    print("Creating website_user_user_permissions table...")
+                    cursor.execute("""
+                        CREATE TABLE website_user_user_permissions (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER NOT NULL,
+                            permission_id INTEGER NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
+                            FOREIGN KEY (permission_id) REFERENCES auth_permission(id) ON DELETE CASCADE,
+                            UNIQUE(user_id, permission_id)
+                        )
+                    """)
+                    print("website_user_user_permissions table created")
+                else:
+                    print("website_user_user_permissions table already exists")
+            else:  # PostgreSQL
+                cursor.execute("""
+                    SELECT table_name FROM information_schema.tables 
+                    WHERE table_schema = 'public' AND table_name = 'website_user_groups'
+                """)
+                if not cursor.fetchone():
+                    print("Creating website_user_groups table...")
+                    cursor.execute("""
+                        CREATE TABLE website_user_groups (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL,
+                            group_id INTEGER NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
+                            FOREIGN KEY (group_id) REFERENCES auth_group(id) ON DELETE CASCADE,
+                            UNIQUE(user_id, group_id)
+                        )
+                    """)
+                    print("website_user_groups table created")
+                else:
+                    print("website_user_groups table already exists")
+                
+                cursor.execute("""
+                    SELECT table_name FROM information_schema.tables 
+                    WHERE table_schema = 'public' AND table_name = 'website_user_user_permissions'
+                """)
+                if not cursor.fetchone():
+                    print("Creating website_user_user_permissions table...")
+                    cursor.execute("""
+                        CREATE TABLE website_user_user_permissions (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL,
+                            permission_id INTEGER NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
+                            FOREIGN KEY (permission_id) REFERENCES auth_permission(id) ON DELETE CASCADE,
+                            UNIQUE(user_id, permission_id)
+                        )
+                    """)
+                    print("website_user_user_permissions table created")
+                else:
+                    print("website_user_user_permissions table already exists")
+            
+            # Check and create many-to-many tables if they don't exist
+            if db_connection.vendor == 'sqlite':
+                cursor.execute("""
+                    SELECT name FROM sqlite_master 
+                    WHERE type='table' AND name='website_user_groups'
+                """)
+                if not cursor.fetchone():
+                    print("Creating website_user_groups table...")
+                    cursor.execute("""
+                        CREATE TABLE website_user_groups (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER NOT NULL,
+                            group_id INTEGER NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
+                            FOREIGN KEY (group_id) REFERENCES auth_group(id) ON DELETE CASCADE,
+                            UNIQUE(user_id, group_id)
+                        )
+                    """)
+                    print("website_user_groups table created")
+                
+                cursor.execute("""
+                    SELECT name FROM sqlite_master 
+                    WHERE type='table' AND name='website_user_user_permissions'
+                """)
+                if not cursor.fetchone():
+                    print("Creating website_user_user_permissions table...")
+                    cursor.execute("""
+                        CREATE TABLE website_user_user_permissions (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER NOT NULL,
+                            permission_id INTEGER NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
+                            FOREIGN KEY (permission_id) REFERENCES auth_permission(id) ON DELETE CASCADE,
+                            UNIQUE(user_id, permission_id)
+                        )
+                    """)
+                    print("website_user_user_permissions table created")
+            else:  # PostgreSQL
+                cursor.execute("""
+                    SELECT table_name FROM information_schema.tables 
+                    WHERE table_schema = 'public' AND table_name = 'website_user_groups'
+                """)
+                if not cursor.fetchone():
+                    print("Creating website_user_groups table...")
+                    cursor.execute("""
+                        CREATE TABLE website_user_groups (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL,
+                            group_id INTEGER NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
+                            FOREIGN KEY (group_id) REFERENCES auth_group(id) ON DELETE CASCADE,
+                            UNIQUE(user_id, group_id)
+                        )
+                    """)
+                    print("website_user_groups table created")
+                
+                cursor.execute("""
+                    SELECT table_name FROM information_schema.tables 
+                    WHERE table_schema = 'public' AND table_name = 'website_user_user_permissions'
+                """)
+                if not cursor.fetchone():
+                    print("Creating website_user_user_permissions table...")
+                    cursor.execute("""
+                        CREATE TABLE website_user_user_permissions (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL,
+                            permission_id INTEGER NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
+                            FOREIGN KEY (permission_id) REFERENCES auth_permission(id) ON DELETE CASCADE,
+                            UNIQUE(user_id, permission_id)
+                        )
+                    """)
+                    print("website_user_user_permissions table created")
             
             # Check if migration is already marked as applied
             cursor.execute("""
