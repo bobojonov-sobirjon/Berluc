@@ -42,11 +42,91 @@ def fix_user_migration():
             
             if not table_exists:
                 print("Creating User table...")
-                # Use Django's schema editor to create the table
-                from apps.website.models import User
+                # Create User table directly using SQL
+                if db_connection.vendor == 'sqlite':
+                    cursor.execute("""
+                        CREATE TABLE website_user (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            password VARCHAR(128) NOT NULL,
+                            last_login DATETIME NULL,
+                            is_superuser BOOLEAN NOT NULL DEFAULT 0,
+                            username VARCHAR(150) NOT NULL UNIQUE,
+                            first_name VARCHAR(150) NOT NULL DEFAULT '',
+                            last_name VARCHAR(150) NOT NULL DEFAULT '',
+                            email VARCHAR(254) NOT NULL DEFAULT '',
+                            is_staff BOOLEAN NOT NULL DEFAULT 0,
+                            is_active BOOLEAN NOT NULL DEFAULT 1,
+                            date_joined DATETIME NOT NULL,
+                            is_manager BOOLEAN NOT NULL DEFAULT 0
+                        )
+                    """)
+                    # Create indexes
+                    cursor.execute("CREATE INDEX IF NOT EXISTS website_user_username ON website_user(username)")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS website_user_email ON website_user(email)")
+                else:  # PostgreSQL
+                    cursor.execute("""
+                        CREATE TABLE website_user (
+                            id SERIAL PRIMARY KEY,
+                            password VARCHAR(128) NOT NULL,
+                            last_login TIMESTAMP NULL,
+                            is_superuser BOOLEAN NOT NULL DEFAULT FALSE,
+                            username VARCHAR(150) NOT NULL UNIQUE,
+                            first_name VARCHAR(150) NOT NULL DEFAULT '',
+                            last_name VARCHAR(150) NOT NULL DEFAULT '',
+                            email VARCHAR(254) NOT NULL DEFAULT '',
+                            is_staff BOOLEAN NOT NULL DEFAULT FALSE,
+                            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+                            date_joined TIMESTAMP NOT NULL,
+                            is_manager BOOLEAN NOT NULL DEFAULT FALSE
+                        )
+                    """)
+                    cursor.execute("CREATE INDEX IF NOT EXISTS website_user_username ON website_user(username)")
+                    cursor.execute("CREATE INDEX IF NOT EXISTS website_user_email ON website_user(email)")
                 
-                schema_editor = db_connection.schema_editor()
-                schema_editor.create_model(User)
+                # Create many-to-many tables
+                if db_connection.vendor == 'sqlite':
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS website_user_groups (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER NOT NULL,
+                            group_id INTEGER NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
+                            FOREIGN KEY (group_id) REFERENCES auth_group(id) ON DELETE CASCADE,
+                            UNIQUE(user_id, group_id)
+                        )
+                    """)
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS website_user_user_permissions (
+                            id INTEGER PRIMARY KEY AUTOINCREMENT,
+                            user_id INTEGER NOT NULL,
+                            permission_id INTEGER NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
+                            FOREIGN KEY (permission_id) REFERENCES auth_permission(id) ON DELETE CASCADE,
+                            UNIQUE(user_id, permission_id)
+                        )
+                    """)
+                else:  # PostgreSQL
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS website_user_groups (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL,
+                            group_id INTEGER NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
+                            FOREIGN KEY (group_id) REFERENCES auth_group(id) ON DELETE CASCADE,
+                            UNIQUE(user_id, group_id)
+                        )
+                    """)
+                    cursor.execute("""
+                        CREATE TABLE IF NOT EXISTS website_user_user_permissions (
+                            id SERIAL PRIMARY KEY,
+                            user_id INTEGER NOT NULL,
+                            permission_id INTEGER NOT NULL,
+                            FOREIGN KEY (user_id) REFERENCES website_user(id) ON DELETE CASCADE,
+                            FOREIGN KEY (permission_id) REFERENCES auth_permission(id) ON DELETE CASCADE,
+                            UNIQUE(user_id, permission_id)
+                        )
+                    """)
+                
                 print("User table created successfully")
             else:
                 print("User table already exists")
