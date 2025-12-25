@@ -6,7 +6,7 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('website', '0011_merge_20251218_1702'),
+        ('website', '0008_remove_gallery_image_galleryimage'),
         ('website', '0010_remove_projectitem_project_and_more'),
     ]
 

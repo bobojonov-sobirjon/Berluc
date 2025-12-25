@@ -209,6 +209,7 @@ class ServiceSerializer(serializers.ModelSerializer):
     translations = serializers.SerializerMethodField()
     category = ServiceCategorySerializer(read_only=True)
     service_items = ServiceItemSerializer(many=True, read_only=True)
+    image = serializers.SerializerMethodField()
     
     def get_translations(self, obj):
         result = {}
@@ -224,9 +225,17 @@ class ServiceSerializer(serializers.ModelSerializer):
                 pass
         return result
     
+    def get_image(self, obj):
+        if obj.image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.image.url)
+            return obj.image.url
+        return None
+    
     class Meta:
         model = Service
-        fields = ['id', 'translations', 'category', 'service_items', 'created_at']
+        fields = ['id', 'translations', 'image', 'category', 'service_items', 'created_at']
 
 
 class TeamMemberSerializer(serializers.ModelSerializer):

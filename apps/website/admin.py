@@ -251,7 +251,7 @@ class ServiceDetailInline(TranslatableTabularInline):
 
 @admin.register(Service)
 class ServiceAdmin(TranslatableAdmin):
-    list_display = ['name', 'get_translation_status', 'category', 'created_at']
+    list_display = ['name', 'get_translation_status', 'category', 'get_image_preview', 'created_at']
     list_filter = ['category', 'created_at']
     search_fields = ['translations__name', 'translations__description']
     date_hierarchy = 'created_at'
@@ -259,6 +259,12 @@ class ServiceAdmin(TranslatableAdmin):
     def get_translation_status(self, obj):
         return get_translation_status(obj)
     get_translation_status.short_description = 'Переводы'
+    
+    def get_image_preview(self, obj):
+        if obj.image:
+            return format_html('<img src="{}" style="max-height: 50px; max-width: 50px;" />', obj.image.url)
+        return '-'
+    get_image_preview.short_description = 'Изображение'
     
     def has_module_permission(self, request):
         return request.user.is_superuser or (hasattr(request.user, 'is_manager') and request.user.is_manager)
@@ -285,7 +291,7 @@ class ServiceAdmin(TranslatableAdmin):
     
     fieldsets = (
         ('Основная информация', {
-            'fields': ('name', 'category', 'description')
+            'fields': ('name', 'category', 'description', 'image')
         }),
         ('Дополнительно', {
             'fields': ('created_at',),

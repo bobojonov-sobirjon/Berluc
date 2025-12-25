@@ -181,6 +181,7 @@ class Service(TranslatableModel):
         name = models.CharField(_("Название"), max_length=255, null=True, blank=True),
         description = models.TextField(_("Описание"), null=True, blank=True),
     )
+    image = models.ImageField(upload_to='services/', verbose_name='Изображение', null=True, blank=True)
     category = models.ForeignKey(ServiceCategory, on_delete=models.CASCADE, verbose_name='Категория', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='Дата создания', null=True, blank=True)
     
