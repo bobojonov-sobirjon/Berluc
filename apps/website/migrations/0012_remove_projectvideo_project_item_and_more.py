@@ -11,50 +11,54 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.RemoveField(
-            model_name='projectvideo',
-            name='project_item',
-        ),
-        migrations.RemoveField(
-            model_name='projectimage',
-            name='project_item',
-        ),
-        migrations.RemoveField(
-            model_name='projectseo',
-            name='project_item',
-        ),
-        migrations.RemoveField(
-            model_name='projectitemtranslation',
-            name='master',
-        ),
-        migrations.AlterUniqueTogether(
-            name='projectitemtranslation',
-            unique_together=None,
-        ),
-        migrations.AddField(
-            model_name='projectimage',
-            name='project',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='images', to='website.project', verbose_name='Проект'),
-        ),
-        migrations.AddField(
-            model_name='projectseo',
-            name='project',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='seo', to='website.project', verbose_name='Проект'),
-        ),
-        migrations.AddField(
-            model_name='projectvideo',
-            name='project',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='videos', to='website.project', verbose_name='Проект'),
-        ),
+        # project_item fieldlari allaqachon olib tashlangan, shuning uchun RemoveField operatsiyalari o'chirildi
+        # migrations.RemoveField(
+        #     model_name='projectvideo',
+        #     name='project_item',
+        # ),
+        # migrations.RemoveField(
+        #     model_name='projectimage',
+        #     name='project_item',
+        # ),
+        # migrations.RemoveField(
+        #     model_name='projectseo',
+        #     name='project_item',
+        # ),
+        # ProjectItemTranslation allaqachon o'chirilgan, shuning uchun RemoveField va AlterUniqueTogether operatsiyalari o'chirildi
+        # migrations.RemoveField(
+        #     model_name='projectitemtranslation',
+        #     name='master',
+        # ),
+        # migrations.AlterUniqueTogether(
+        #     name='projectitemtranslation',
+        #     unique_together=None,
+        # ),
+        # project fieldlari allaqachon qo'shilgan, shuning uchun AddField operatsiyalari o'chirildi
+        # migrations.AddField(
+        #     model_name='projectimage',
+        #     name='project',
+        #     field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='images', to='website.project', verbose_name='Проект'),
+        # ),
+        # migrations.AddField(
+        #     model_name='projectseo',
+        #     name='project',
+        #     field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='seo', to='website.project', verbose_name='Проект'),
+        # ),
+        # migrations.AddField(
+        #     model_name='projectvideo',
+        #     name='project',
+        #     field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='videos', to='website.project', verbose_name='Проект'),
+        # ),
         migrations.AddField(
             model_name='service',
             name='image',
             field=models.ImageField(blank=True, null=True, upload_to='services/', verbose_name='Изображение'),
         ),
-        migrations.DeleteModel(
-            name='ProjectItem',
-        ),
-        migrations.DeleteModel(
-            name='ProjectItemTranslation',
-        ),
+        # ProjectItem va ProjectItemTranslation allaqachon o'chirilgan, shuning uchun DeleteModel operatsiyalari o'chirildi
+        # migrations.DeleteModel(
+        #     name='ProjectItem',
+        # ),
+        # migrations.DeleteModel(
+        #     name='ProjectItemTranslation',
+        # ),
     ]
